@@ -1,0 +1,25 @@
+Copy code
+# Módulos y dependencias instaladas por npm o Yarn
+node_modules/
+
+# Archivos generados por el entorno de desarrollo
+dist/
+build/
+out/
+.cache/
+.tmp/
+logs/
+
+# Archivos de configuración local
+.env
+
+# Archivos de registro o de salida
+*.log
+*.log.*
+logs/
+log/
+
+# Archivos temporales
+*.swp
+*~
+.DS_Store

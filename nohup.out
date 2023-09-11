@@ -1,0 +1,5 @@
+
+> arqc-api@1.0.0 start
+> node index.js
+
+Servidor escuchando en el puerto 8080
