@@ -1,15 +1,18 @@
 const express = require('express');
-const testRoute = require('./routes/test.route');
+const arqc_route = require('./routes/arqc.route');
+
+// variables de entorno
+require('dotenv').config();
 
 const app = express();
 
 app.use(express.json());
 
 // Rutas
-app.use('/api', testRoute);
+app.use('/arqc', arqc_route);
 
 // Puerto de escucha
-const port = 8080;
+const port = process.env.PORT || 3000;
 
 app.listen(port, () => {
   console.log(`Servidor escuchando en el puerto ${port}`);
