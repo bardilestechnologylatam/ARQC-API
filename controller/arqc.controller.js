@@ -50,12 +50,8 @@ arqc_obj.get_arqc = async (req, res)=>{
 
 
 // Función para validar los campos según el JSON recibido en el payload
-
-
 const validateFields = (data, schema) => {
-
     let errors = []
-
     for (const field in schema) {
       if (schema.hasOwnProperty(field)) {
         const fieldSchema = schema[field];
@@ -65,9 +61,13 @@ const validateFields = (data, schema) => {
             errors.push(`${field} - parametro requerido.`); 
             console.log(`agregando error ${field}`)
         }else{
-            if (fieldSchema.length_data && fieldSchema.length_data != value.length ) {
+            if (fieldSchema.length_data && fieldSchema.length_data != value.toString().length ) {
                 //console.log(fieldSchema.length_data)
                 errors.push(`${field} debe tener un largo de ${fieldSchema.length_data} `);
+            }
+
+            if (fieldSchema.integer && !Number.isInteger(value)) {
+                errors.push(`${field} debe ser un número entero.`);
             }
 
 
@@ -90,7 +90,7 @@ const validateFields = (data, schema) => {
     if (errors.length === 0) {
         return null;
     }
-    
+
     return errors;
 
 };
