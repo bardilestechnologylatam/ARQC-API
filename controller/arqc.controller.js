@@ -4,8 +4,11 @@
 arqc_obj = {}
 
 // Esquema del req a validar
-const validationSchema = require('../schemas/arqc_req');
+const schemas_payload = require('../schemas/arqc_req');
+const schemas_function = require('../functions/schemas.functions') // validaciones del esquema con el payload
+
 const arqc_functions = require('../functions/arqc.functions') // OBTENER FRANQUICIA 
+
 
 // const conn = new Connection({
 //     transport: 'idb', // concepto - no operativo
@@ -19,14 +22,32 @@ const arqc_functions = require('../functions/arqc.functions') // OBTENER FRANQUI
 arqc_obj.get_arqc = async (req, res)=>{
     const { body } = req;
 
-    // VALIDACION DEL REQUEST CON EL ESQUEMA PRE CONSUMO DEL APLICATIVO
-    const errors = validateFields(body, validationSchema);
+    // VALIDACION DEL REQUEST/PAYLOAD CON EL ESQUEMA - PRE CONSUMO DEL APLICATIVO
+    const errors = schemas_function.validateFields(body, schemas_payload);
     if (errors != null) {
         res.status(400).json({ errors });
     }else{
-
         // SI ESTAN LOS PARAMETROS VALIDADOS, REALIZAMOS EL CONSUMO DEL PROGRAMA
-        res.status(200).json({"Status": " OK "})
+        // VALIDACION DE LA FRANQUICIA - SI ES MASTERCARD SEGUN EL TAG 5A
+        try{
+            if (await arqc_functions.get_franquicia(body["5A"].substring(0, 6)) != null ){
+                // OBTENEMOS EL VALOR DE LA FRANQUICIA PARA VALIDAR SI ES MASTERCARD
+                franquicia = arqc_functions.get_franquicia(body["5A"].substring(0, 6))
+                franquicia_validada = arqc_functions.is_mastercard(franquicia)
+                if (franquicia_validada){
+                    res.status(200).json({"Status": "OK"})
+                }else{
+                    res.status(200).json({"Status": "Franquicia no es mastercard"})
+                }
+            }else{
+                res.status(200).json({"Status": "Franquicia no se ha encontrado"})
+            }
+        }catch (error) {
+            res.json({error})
+        }
+    
+
+
 
         // const program = new ProgramCall(process.env.PROGRAM_ARQC, {
         //     lib: process.env.LIBRARY_ARQC
@@ -47,36 +68,5 @@ arqc_obj.get_arqc = async (req, res)=>{
         // });
     }
 }
-
-
-// FUNCION PARA VALIDAR EL ESQUEMA CON EL BODY
-const validateFields = (data, schema) => {
-    let errors = []
-    for (const field in schema) {
-      if (schema.hasOwnProperty(field)) {
-        const fieldSchema = schema[field];
-        const value = data[field];
-        if (!value || value == '' || value === null || value === undefined ) {
-            errors.push(`${field} - parametro requerido.`); 
-            console.log(`agregando error ${field}`)
-        }else{
-            if (fieldSchema.length_data && fieldSchema.length_data != value.toString().length ) {
-                errors.push(`${field} debe tener un largo de ${fieldSchema.length_data} `);
-            }
-
-            if (fieldSchema.integer && !Number.isInteger(value)) {
-                errors.push(`${field} debe ser un número.`);
-            }
-        }
-      }
-    }
-    
-    if (errors.length === 0) {
-        return null;
-    }
-
-    return errors;
-
-};
 
 module.exports = arqc_obj;
