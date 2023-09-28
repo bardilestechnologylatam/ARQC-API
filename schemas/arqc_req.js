@@ -1,11 +1,4 @@
-// esquema del json a recibir
 const schematags = {
-    ATM: {
-        param_arqc: "APL"
-    },
-    EMVARQC: {
-        param_arqc: "PCOM"
-    },
     "5A": {
         length_data: 16,
         param_arqc: "PPAN"
@@ -32,7 +25,7 @@ const schematags = {
         param_arqc: "RQAOT",
     },
     "9F1A": {
-        length_data: 3,
+        length_data: 4,
         param_arqc: "RQTCO"
     },
     "95": {
@@ -40,7 +33,7 @@ const schematags = {
         param_arqc: "RQTVR"
     },
     "5F2A": {
-        length_data: 3,
+        length_data: 4,
         param_arqc: "RQTCU"
     },
     "9A": {
