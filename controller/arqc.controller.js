@@ -1,5 +1,5 @@
-//const { Connection, CommandCall, ProgramCall } = require('itoolkit');
-//const { XMLParser } = require('fast-xml-parser');
+const { Connection, ProgramCall } = require('itoolkit');
+const { XMLParser } = require('fast-xml-parser');
 
 arqc_obj = {}
 
@@ -8,17 +8,6 @@ const schemas_payload = require('../schemas/arqc_req');
 const schemas_function = require('../functions/schemas.functions') // validaciones del esquema con el payload
 
 const arqc_functions = require('../functions/arqc.functions') // OBTENER FRANQUICIA 
-
-
-// const conn = new Connection({
-//     transport: 'idb', // concepto - no operativo
-//     transportOptions: { 
-//         host: process.env.HOST_ARQC || 'dafault' , 
-//         username: process.env.USER_ARQC || 'dafault' , 
-//         password: process.env.PWD_ARQC || 'dafault' 
-//     },
-// });
-
 arqc_obj.get_arqc = async (req, res)=>{
     const { body } = req;
 
@@ -35,7 +24,53 @@ arqc_obj.get_arqc = async (req, res)=>{
                 franquicia = arqc_functions.get_franquicia(body["5A"].substring(0, 6))
                 franquicia_validada = arqc_functions.is_mastercard(franquicia)
                 if (franquicia_validada){
-                    res.status(200).json({"Status": "OK"})
+                    //res.status(200).json({"Status": "OK"})
+
+                    // si los campos son validos...
+
+                    try{
+                        const conn = new Connection({
+                            transport: 'idb', // concepto - no operativo
+                            transportOptions: { 
+                                host: process.env.HOST_ARQC || 'dafault' , 
+                                username: process.env.USER_ARQC || 'dafault' , 
+                                password: process.env.PWD_ARQC || 'dafault' 
+                            },
+                        });
+    
+                        const program = new ProgramCall(process.env.PROGRAM_ARQC, {
+                            lib: process.env.LIBRARY_ARQC
+                        })
+                        
+                        
+                        for (const tag in schemas_payload) {
+                            if (schemas_payload.hasOwnProperty(tag)) {
+                                const tag_value = body[tag];
+                                console.log(`Tag: ${tag}, Campo param_arqc: ${tag_value}`);
+                                program.addParam({type: tag ,value:tag_value })
+                            }
+                        }
+    
+                        conn.add(program);
+
+                        conn.run((error, xmlOutput) => {
+                            if (error) {
+                              throw error;
+                            }
+                            const Parser = new XMLParser();
+                            const result = Parser.parse(result);
+                            console.log(JSON.stringify(result));
+
+                            res.json(JSON.stringify(result))
+                        });
+                    }catch (error){
+                        res.status(200).json({"Status": "Error conexion HOST","Error": error})
+                    }
+
+                    
+
+
+
                 }else{
                     res.status(200).json({"Status": "Franquicia no es mastercard"})
                 }
