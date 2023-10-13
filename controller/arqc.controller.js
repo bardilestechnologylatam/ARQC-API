@@ -1,5 +1,5 @@
-const { Connection, ProgramCall } = require('itoolkit');
-const { XMLParser } = require('fast-xml-parser');
+//const { Connection, ProgramCall } = require('itoolkit');
+//const { XMLParser } = require('fast-xml-parser');
 
 arqc_obj = {}
 
@@ -29,8 +29,18 @@ arqc_obj.get_arqc = async (req, res)=>{
                     // si los campos son validos...
 
                     try{
+                        const host = process.env.HOST_ARQC
+                        const user = process.env.USER_ARQC
+                        const passwd = process.env.PWD_ARQC
+                        const programAz = process.env.PROGRAM_ARQC
+                        const lib = process.env.LIBRARY_ARQC
+
+                        console.log("//////////////////////////////////////")
+                        console.log("verificacion de uso de .ENV")
+                        console.log(host, user, passwd, programAz, lib)
+
                         const conn = new Connection({
-                            transport: 'idb', // concepto - no operativo
+                            transport: 'idb', 
                             transportOptions: { 
                                 host: process.env.HOST_ARQC || 'dafault' , 
                                 username: process.env.USER_ARQC || 'dafault' , 
@@ -42,7 +52,6 @@ arqc_obj.get_arqc = async (req, res)=>{
                             lib: process.env.LIBRARY_ARQC
                         })
                         
-                        
                         for (const tag in schemas_payload) {
                             if (schemas_payload.hasOwnProperty(tag)) {
                                 const tag_value = body[tag];
@@ -50,11 +59,13 @@ arqc_obj.get_arqc = async (req, res)=>{
                                 program.addParam({type: tag ,value:tag_value })
                             }
                         }
-    
+                        
+                        console.log(program)
                         conn.add(program);
 
                         conn.run((error, xmlOutput) => {
                             if (error) {
+                              console.log("error: ", error)
                               throw error;
                             }
                             const Parser = new XMLParser();
@@ -63,14 +74,11 @@ arqc_obj.get_arqc = async (req, res)=>{
 
                             res.json(JSON.stringify(result))
                         });
+
                     }catch (error){
+                        console.log(error)
                         res.status(200).json({"Status": "Error conexion HOST","Error": error})
                     }
-
-                    
-
-
-
                 }else{
                     res.status(200).json({"Status": "Franquicia no es mastercard"})
                 }
@@ -80,27 +88,6 @@ arqc_obj.get_arqc = async (req, res)=>{
         }catch (error) {
             res.json({error})
         }
-    
-
-
-
-        // const program = new ProgramCall(process.env.PROGRAM_ARQC, {
-        //     lib: process.env.LIBRARY_ARQC
-        // })
-
-        // program.addParam({type: '',value:'' })
-        // conn.add(program);
-
-        // conn.run((error, xmlOutput) => {
-        // if (error) {
-        //     throw error;
-        // }
-
-        // const Parser = new XMLParser();
-        // const result = Parser.parse(result);
-
-        // console.log(JSON.stringify(result));
-        // });
     }
 }
 
