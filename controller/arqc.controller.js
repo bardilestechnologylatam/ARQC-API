@@ -1,5 +1,5 @@
-//const { Connection, ProgramCall } = require('itoolkit');
-//const { XMLParser } = require('fast-xml-parser');
+const { Connection, ProgramCall } = require('itoolkit');
+const { XMLParser } = require('fast-xml-parser');
 
 arqc_obj = {}
 
@@ -19,7 +19,7 @@ arqc_obj.get_arqc = async (req, res)=>{
         // SI ESTAN LOS PARAMETROS VALIDADOS, REALIZAMOS EL CONSUMO DEL PROGRAMA
         // VALIDACION DE LA FRANQUICIA - SI ES MASTERCARD SEGUN EL TAG 5A
 
-        let errors_conexion = []
+
         try{
             if (await arqc_functions.get_franquicia(body["5A"].substring(0, 6)) != null ){
                 // OBTENEMOS EL VALOR DE LA FRANQUICIA PARA VALIDAR SI ES MASTERCARD
@@ -42,11 +42,11 @@ arqc_obj.get_arqc = async (req, res)=>{
                         console.log(host, user, passwd, programAz, lib)
 
                         const conn = new Connection({
-                            transport: 'idb', 
+                            transport: 'ssh', 
                             transportOptions: { 
-                                host: process.env.HOST_ARQC || 'dafault' , 
-                                username: process.env.USER_ARQC || 'dafault' , 
-                                password: process.env.PWD_ARQC || 'dafault' 
+                                host: process.env.HOST_ARQC || 'default' , 
+                                username: process.env.USER_ARQC || 'default' , 
+                                password: process.env.PWD_ARQC || 'default' 
                             },
                         });
                         
@@ -62,7 +62,7 @@ arqc_obj.get_arqc = async (req, res)=>{
                                 program.addParam({type: tag ,value:tag_value })
                             }
                         }
-                        conn.add(program);
+                        
                         */
 
                        let APL = "ATM"
@@ -90,49 +90,25 @@ arqc_obj.get_arqc = async (req, res)=>{
 
                        PDATOS = RQAAU + RQAOT + RQTCO + RQTVR + RQTCU + RQTDA + RQTTY + RQUNN + RQAIP + RQATC + RQCMM + RQMPR
 
-                       program.addParam({type: "APL" ,value: APL })
-                       program.addParam({type: "PCOM" ,value :PCOM })
-                       program.addParam({type: "PPAN" ,value: PPAN })
-                       program.addParam({type: "PPSN" ,value: PPSN })
-                       program.addParam({type: "PATC" ,value: PATC })
-                       program.addParam({type: "PUN" ,value: PUN })
-                       program.addParam({type: "PDATOS" ,value: PDATOS })
-                       program.addParam({type: "PVKI" ,value: PVKI })
-                       program.addParam({type: "PCVN" ,value: PCVN })
-                       
-                       /*
-                    
-                       program.addParam({type: "RQAAU" ,value: RQAAU })
-                       program.addParam({type: "RQAOT" ,value :RQAOT })
-                       program.addParam({type: "RQTCO" ,value: RQTCO })
-                       program.addParam({type: "RQTVR" ,value: RQTVR })
-                       program.addParam({type: "RQTCU" ,value: RQTCU })
-                       program.addParam({type: "RQTDA" ,value: RQTDA })
-                       program.addParam({type: "RQTTY" ,value: RQTTY })
-                       program.addParam({type: "RQUNN" ,value: RQUNN })
-                       program.addParam({type: "RQAIP" ,value: RQAIP })
-                       program.addParam({type: "RQATC" ,value: RQATC })
-                       program.addParam({type: "RQCMM" ,value: RQCMM })
-                       program.addParam({type: "RQMPR" ,value: RQMPR })
-
-                       */
-
+                       program.addParam({type: "1024A", value: "" })
+                      
                         // llamada del programa
+                        conn.add(program);
+                        conn.debug(true);
+                        
                         conn.run((error, xmlOutput) => {
                             if (error) {
                               console.log("error: ", error)
-                              errors_conexion.append(error)
-                              throw error;
+                              return error;
                             }
-                            const Parser = new XMLParser();
-                            const result = Parser.parse(result);
-                            console.log(JSON.stringify(result));
-                            res.json(JSON.stringify(result))
+                            //const Parser = new XMLParser();
+                            //const result = Parser.parse(result);
+                            console.log(xmlOutput);
+                            res.json({"status": "Ok"}
                         });
                         
                     }catch (error){
-                        errors_conexion.append(error)
-                        res.status(200).json({"Status": "Error conexion HOST","Errores": errors_conexion})
+                        res.status(200).json({"Status": "Error conexion HOST","Errores": error})
                     }
                 }else{
                     res.status(200).json({"Status": "Franquicia no es mastercard"})
