@@ -90,7 +90,18 @@ arqc_obj.get_arqc = async (req, res)=>{
 
                        PDATOS = RQAAU + RQAOT + RQTCO + RQTVR + RQTCU + RQTDA + RQTTY + RQUNN + RQAIP + RQATC + RQCMM + RQMPR
 
-                       program.addParam({type: "1024A", value: "" })
+                       program.addParam({type: "3A", value: APL })
+                       program.addParam({type: "7A", value: PCOM })
+                       program.addParam({type: "16A", value: PPAN })
+                       program.addParam({type: "2A", value: PPSN })
+                       program.addParam({type: "4A", value: PATC })
+                       program.addParam({type: "8A", value: PUN })
+                       program.addParam({type: "138A", value: PDATOS })
+                       program.addParam({type: "1A", value: PVKI })
+                       program.addParam({type: "2A", value: PCVN })
+                       
+                       // sum_params = APL+PCOM+PPAN+PPSN+PATC+PUN+PDATOS+PVKI+PCVN
+                       // program.addParam({type: "1024A", value: PCVN })
                       
                         // llamada del programa
                         conn.add(program);
