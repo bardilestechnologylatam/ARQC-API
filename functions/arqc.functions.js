@@ -29,4 +29,12 @@ arqc_functions.is_mastercard = (franquicia) => {
     }   
 }
 
+arqc_functions.is_visa = (franquicia) => {
+    if (franquicia.includes("VISA")) {
+        return true
+    } else {
+        return false
+    }   
+}
+
 module.exports = arqc_functions;

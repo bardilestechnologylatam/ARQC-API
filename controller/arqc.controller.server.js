@@ -1,15 +1,32 @@
 const { Connection, ProgramCall, CommandCall } = require('itoolkit');
 const { XMLParser } = require('fast-xml-parser');
 
-
-
 arqc_obj = {}
 
 // Esquema del req a validar
+const schemas_arqc = require('../schemas/arqc_program');
 const schemas_payload = require('../schemas/arqc_req');
 const schemas_function = require('../functions/schemas.functions') // validaciones del esquema con el payload
 
 const arqc_functions = require('../functions/arqc.functions') // OBTENER FRANQUICIA 
+
+
+const add_space = (qty_characters, data_param_arqc) =>{
+    if (qty_characters == data_param_arqc.length){
+        return data_param_arqc
+    }else{
+        let aux = data_param_arqc
+        qty_spaces_add = qty_characters - data_param_arqc.length
+        //console.log(qty_spaces_add)
+        if(qty_spaces_add > 0){
+            //console.log("paso a for")
+            data_param_arqc += " ".repeat(qty_spaces_add)
+        }
+        
+        return data_param_arqc
+    }
+}
+
 arqc_obj.get_arqc = async (req, res)=>{
     const { body } = req;
 
@@ -28,34 +45,22 @@ arqc_obj.get_arqc = async (req, res)=>{
                 franquicia = arqc_functions.get_franquicia(body["5A"].substring(0, 6))
                 franquicia_validada = arqc_functions.is_mastercard(franquicia)
                 if (franquicia_validada){
-                    //res.status(200).json({"Status": "OK"})
-
                     // si los campos son validos...
-
                     try{
-                        const host = process.env.HOST_ARQC
-                        const user = process.env.USER_ARQC
-                        const passwd = process.env.PWD_ARQC
-                        const programAz = process.env.PROGRAM_ARQC
-                        const lib = process.env.LIBRARY_ARQC
-
-                        console.log("//////////////////////////////////////")
-                        console.log("verificacion de uso de .ENV")
-                        console.log(host, user, passwd, programAz, lib)
-
-                        const conn = new Connection({
-                            transport: 'ssh', 
-                            transportOptions: { 
-                                host: process.env.HOST_ARQC || 'default' , 
-                                username: process.env.USER_ARQC || 'default' , 
-                                password: process.env.PWD_ARQC || 'default' 
-                            },
-                        });
+                        // const conn = new Connection({
+                        //     transport: 'ssh', 
+                        //     transportOptions: { 
+                        //         host: process.env.HOST_ARQC || 'default' , 
+                        //         username: process.env.USER_ARQC || 'default' , 
+                        //         password: process.env.PWD_ARQC || 'default' 
+                        //     },
+                        // });
                         
-                        const program = new ProgramCall(process.env.PROGRAM_ARQC, {
-                            lib: process.env.LIBRARY_ARQC
-                        })
-			const command = new CommandCall({ type: 'cl', command: 'CHGLIBL LIBL(AXSWQACL AZLOSWQACL AZCOSWQA AZBASWQA AZML2931 QGPL QTEMP MIMIX)  ' })
+                        // const program = new ProgramCall(process.env.PROGRAM_ARQC, {
+                        //     lib: process.env.LIBRARY_ARQC
+                        // })
+
+                        // const command = new CommandCall({ type: 'cl', command: 'CHGLIBL LIBL(AXSWQACL AZLOSWQACL AZCOSWQA AZBASWQA AZML2931 QGPL QTEMP MIMIX)  ' })
 
                         /*
                         for (const tag in schemas_payload) {
@@ -67,64 +72,68 @@ arqc_obj.get_arqc = async (req, res)=>{
                         }
                         
                         */
-
-                       let APL = "ATM"
-                       let PCOM = "EMVARQC   "
-                       let PPAN = "5122695026122100   "
-                       let PPSN = "00 "
-                       let PATC = "002F"
-                       let PUN = "8A7B5A4F"
-                       let PDATOS = ""
-                       let PVKI = "0"
-                       let PCVN = "12"
-
-                       let RQAAU = "000000000000"
-                       let RQAOT = "000000000000"
-                       let RQTCO = "0152"
-                       let RQTVR = "8000048000"
-                       let RQTCU = "0152"
-                       let RQTDA = "230928"
-                       let RQTTY = "01"
-                       let RQUNN = "8A7B5A4F"
-                       let RQAIP = "3900"
-                       let RQATC = "002F"
-                       let RQCMM = "A0000122                                                                                                                                                                                    "
-                       //let RQMPR = "A0000122000000"
-
-                       PDATOS = RQAAU + RQAOT + RQTCO + RQTVR + RQTCU + RQTDA + RQTTY + RQUNN + RQAIP + RQATC + RQCMM
-
-                      // program.addParam({type: "3A", value: APL, io: "both" })
-                      // program.addParam({type: "7A", value: PCOM, io: "both" })
-                      // program.addParam({type: "16A", value: PPAN, io: "both" })
-                      // program.addParam({type: "2A", value: PPSN, io: "both" })
-                      // program.addParam({type: "4A", value: PATC, io: "both" })
-                      // program.addParam({type: "8A", value: PUN, io: "both" })
-                      // program.addParam({type: "138A", value: PDATOS, io: "both" })
-                      // program.addParam({type: "1A", value: PVKI, io: "both" })
-                      // program.addParam({type: "2A", value: PCVN, io: "both" })
                        
-                        sum_params = APL+PCOM+PPAN+PPSN+PATC+PUN+PDATOS+PVKI+PCVN
-                        program.addParam({type: "1024A", value: "ATMEMVARQC   5122695026122100   00 002F8A7B5A4F000000000000000000000000015280000480000152230928018A7B5A4F3900002FA0000122                                                                                                                                                                                      0                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         12                                                                     ", io: "both" })
+                       let params = ""
+
+                       for (const param in schemas_arqc){
+                            console.log(param)
+                            if (schemas_arqc[param].hasOwnProperty("value")) {
+                                //console.log("pasoo", schemas_arqc[param]["value"])
+                                params += schemas_arqc[param]["value"]
+                                console.log("Hasta " + param + params.length )
+
+                            }else if (schemas_arqc[param].hasOwnProperty("blank_space")) {
+                                params += " ".repeat(schemas_arqc[param]["blank_space"]);
+                                console.log("Hasta " + param + params.length )
+
+                            }else{
+                                if (param == "RQCMM"){ // finaliza pdatos
+                                    let value_param = body["9F10"]
+                                    let value_parse_param = value_param.slice(4, 12)
+                                    console.log(value_parse_param)
+                                    params += value_parse_param
+                                    let qty_blank_space_add = ( 301 - params.length)  + 2
+                                    params += " ".repeat(qty_blank_space_add);
+                                    console.log("Hasta PDATOS " + params.length )
+                                }else{
+                                    param_arqc = schemas_arqc[param]["param_arqc"]
+                                    min = schemas_arqc[param]["init"]
+                                    max = schemas_arqc[param]["end"]
+                                    cnt_caracteres = (max - min) + 1
+                                    params += add_space(cnt_caracteres, body[param_arqc] )
+                                    console.log("Hasta " + param + " " + params.length )
+                                }
+                            }
+                       }
+
+                       let max_length_pgm = 1024
+                       let qty_blank_space_end = max_length_pgm - params.length
+                       params += " ".repeat(qty_blank_space_end);
+
+                        program.addParam({type: "1024A", value: params , io:"both" })
                       
-                        // llamada del programa
-			conn.add(command);
+                        // // llamada del programa
                         conn.add(program);
                         conn.debug(true);
                         
                         conn.run((error, xmlOutput) => {
                             if (error) {
                               console.log("error: ", error)
+                              res.json({"status": error})
                               return error;
                             }
+                           
                             const Parser = new XMLParser();
                             const result = Parser.parse(xmlOutput);
-				console.log(result);
-				//var respu = JSON.parse(JSON.stringify(result.myscript.pgm.error[0]));
-				// var pin = respu[0].data + "";
-				//console.log(respu)
+                            console.log(result);
+                            //var respu = JSON.parse(JSON.stringify(result.myscript.pgm.error[0]));
+                            // var pin = respu[0].data + "";
+                            //console.log(respu)
+                            res.json({"status": "Ok"})
                         });
-                        
+   
                     }catch (error){
+                        console.log(error)
                         res.status(200).json({"Status": "Error conexion HOST","Errores": error})
                     }
                 }else{
