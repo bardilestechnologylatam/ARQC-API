@@ -44,28 +44,26 @@ arqc_obj.get_arqc = async (req, res) => {
 
             if (franquicia != null) {
                 // FRANQUICIA VALIDADA
-                const PCVN = (body["9F10"].substring(4, 6) === "12") ? "12" : "  "
+                const new_9f10 = (body["9F10"].length == "14") ? body["9F10"] : body["9F10"].substring(4, 16)
+                const PCVN = (new_9f10.substring(4, 6) === "12") ? "12" : "  "
+                console.log("9F10 => "+ new_9f10, " PCVN =>"+ PCVN)
 
                 schemas_arqc["PCVN"]["value"] = PCVN
                 //console.log(body["9F10"] + " /n " + PCVN + " /n " + body["9F10"].substring(4, 6))
                 let PLOT_PARAMS = ""
                 let PDATOS = ""
-
                 let activate_pdatos = false
 
                 for (const field in schemas_arqc) {
-
                     let tag_schama = schemas_arqc[field]["param_arqc"]
                     let value_tag = (schemas_arqc[field].hasOwnProperty("value")) ? schemas_arqc[field]["value"] : body[tag_schama]
                     let init_space_string = schemas_arqc[field]["init"]
                     let end_space_string = schemas_arqc[field]["end"]
-
                     let qty_space_blank = (end_space_string - init_space_string) + 1
 
                     // agregamos los valores de la segunda trama 
                     if (schemas_arqc[field].hasOwnProperty("tag") && schemas_arqc[field]["tag"] == "pdatos") {
                         activate_pdatos = true // cancelamos el recorrdido de schemas despues del pdatos
-
                         // RQATC corresponde al ultimo valor no calculado de la cadena, falta calcular el valor RQCMM o RQMPR
                         PDATOS += value_tag
                         if (field == "RQATC") {
@@ -95,6 +93,7 @@ arqc_obj.get_arqc = async (req, res) => {
                         //console.log("agregando:", value_tag)
                     }
                 }
+
                 let init_pdatos = 48 + PDATOS.length
                 let end_pdatos = 303 // es hasta el 301 pero se le agregan dos espacios en blancos por que PVKI va en el 304
                 PDATOS += add_space((end_pdatos - init_pdatos) + 1, PDATOS)
@@ -110,6 +109,7 @@ arqc_obj.get_arqc = async (req, res) => {
 
                 // completar hasta el 1024
                 PLOT_PARAMS += " ".repeat(1024 - 956 + 1)
+                console.log()
                 console.log("String total:" + (PLOT_PARAMS).length)
 
                 // CONEXION IBM 
@@ -137,7 +137,7 @@ arqc_obj.get_arqc = async (req, res) => {
 
                     conn.run((error, xmlOutput) => {
                         if (error) {
-                            res.json({ "status": error })
+                            res.json({ "Status": error })
                             return error;
                         }
 
@@ -153,8 +153,6 @@ arqc_obj.get_arqc = async (req, res) => {
                 } catch (error) {
                     res.json({ "Status": "error", error })
                 }
-
-
             } else {
                 res.json({ "Status": "Franquicia no encontrada" })
             }
