@@ -1,10 +1,18 @@
 const express = require('express');
+<<<<<<< HEAD
 const bodyParser = require('body-parser');
 const { Connection, CommandCall } = require('itoolkit');
+=======
+const arqc_route = require('./routes/arqc.route');
+
+// variables de entorno
+require('dotenv').config();
+>>>>>>> devBardiles
 
 const app = express();
 
 
+<<<<<<< HEAD
 const connection = new Connection({
   transport: 'ssh',
   transportOptions: { host: '10.140.0.215', username: 'CLSACE', password: 'CLS4C384' },
@@ -43,4 +51,14 @@ const port = process.env.PORT || 3000;
 // Iniciar el servidor
 app.listen(port, () => {
   console.log(`Servidor API en ejecución en el puerto ${port}`);
+=======
+// Rutas
+app.use('/arqc', arqc_route);
+
+// Puerto de escucha
+const port = process.env.PORT || 3000;
+
+app.listen(port, () => {
+  console.log(`Servidor escuchando en el puerto ${port}`);
+>>>>>>> devBardiles
 });

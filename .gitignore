@@ -11,7 +11,7 @@ out/
 logs/
 
 # Archivos de configuración local
-.env
+# .env
 
 # Archivos de registro o de salida
 *.log
