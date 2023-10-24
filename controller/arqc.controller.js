@@ -44,117 +44,134 @@ arqc_obj.get_arqc = async (req, res) => {
 
             if (franquicia != null) {
                 // FRANQUICIA VALIDADA
-                const PCVN = (body["9F10"].substring(4, 6) === "12") ? "12" : "  "
 
-                schemas_arqc["PCVN"]["value"] = PCVN
-                //console.log(body["9F10"] + " /n " + PCVN + " /n " + body["9F10"].substring(4, 6))
-                let PLOT_PARAMS = ""
-                let PDATOS = ""
+                if (body["9F10"].length == "14" || body["9F10"].length == "36") {
+                    const new_9f10 = (body["9F10"].length == "14") ? body["9F10"] : body["9F10"].substring(4, 16)
+                    const old_card = (body["9F10"].length == "14") ? true : false // almacenamos si la tarjeta es antigua 14 o nueva de 36 caracteres
 
-                let activate_pdatos = false
+                    const bin_card = body["5A"].substring(0, 6)
+                    const PCVN = (new_9f10.substring(4, 6) === "12" ||  bin_card.includes("533187") ||  bin_card.includes("627180")) ? "12" : "  "
+                    console.log("9F10 => " + new_9f10, " PCVN =>" + PCVN)
 
-                for (const field in schemas_arqc) {
+                    schemas_arqc["PCVN"]["value"] = PCVN
+                    //console.log(body["9F10"] + " /n " + PCVN + " /n " + body["9F10"].substring(4, 6))
+                    let PLOT_PARAMS = ""
+                    let PDATOS = ""
+                    let activate_pdatos = false
 
-                    let tag_schama = schemas_arqc[field]["param_arqc"]
-                    let value_tag = (schemas_arqc[field].hasOwnProperty("value")) ? schemas_arqc[field]["value"] : body[tag_schama]
-                    let init_space_string = schemas_arqc[field]["init"]
-                    let end_space_string = schemas_arqc[field]["end"]
+                    for (const field in schemas_arqc) {
+                        let tag_schama = schemas_arqc[field]["param_arqc"]
+                        let value_tag = (schemas_arqc[field].hasOwnProperty("value")) ? schemas_arqc[field]["value"] : body[tag_schama]
+                        let init_space_string = schemas_arqc[field]["init"]
+                        let end_space_string = schemas_arqc[field]["end"]
+                        let qty_space_blank = (end_space_string - init_space_string) + 1
 
-                    let qty_space_blank = (end_space_string - init_space_string) + 1
+                        // agregamos los valores de la segunda trama 
+                        if (schemas_arqc[field].hasOwnProperty("tag") && schemas_arqc[field]["tag"] == "pdatos") {
+                            activate_pdatos = true // cancelamos el recorrdido de schemas despues del pdatos
+                            // RQATC corresponde al ultimo valor no calculado de la cadena, falta calcular el valor RQCMM o RQMPR
+                            PDATOS += value_tag
+                            
+                            if (field == "RQATC") {
 
-                    // agregamos los valores de la segunda trama 
-                    if (schemas_arqc[field].hasOwnProperty("tag") && schemas_arqc[field]["tag"] == "pdatos") {
-                        activate_pdatos = true // cancelamos el recorrdido de schemas despues del pdatos
+                                if (old_card){
+                                    if (PCVN == "12" && arqc_functions.is_mastercard(franquicia)) {
+                                        console.log("Condicion 1")
+                                        PDATOS+= new_9f10.substring(4,12)
+    
+                                    } else if (PCVN != "12" && arqc_functions.is_visa(franquicia)) {
+                                        console.log("Condicion 2")
+                                        PDATOS+= new_9f10.substring(6,8)
+                                        
+                                    } else if (PCVN != "12" && !arqc_functions.is_visa(franquicia)) {
+                                        console.log("Condicion 4")
+                                        PDATOS+= new_9f10
 
-                        // RQATC corresponde al ultimo valor no calculado de la cadena, falta calcular el valor RQCMM o RQMPR
-                        PDATOS += value_tag
-                        if (field == "RQATC") {
-                            //console.log("PCVM = ", PCVN)
-                            if (PCVN == "12" && arqc_functions.is_mastercard(franquicia)) {
-                                console.log("CAE EN RQCMM")
+                                    }else if (PCVN == "12" && arqc_functions.is_visa(franquicia)){
+                                        console.log("Condicion 5")
+                                        PDATOS+= new_9f10
+                                    }
 
-                            } else if (PCVN != "12" && arqc_functions.is_visa(franquicia)) {
-                                console.log("CAE EN RQCMM")
-
-                            } else if (PCVN == "12" && !arqc_functions.is_mastercard(franquicia)) {
-                                console.log("CAE EN RQMPR")
-
-                            } else if (PCVN != "12" && !arqc_functions.is_visa(franquicia)) {
-                                console.log("CAE EN RQMPR")
-
-                            } else {
-
-                                console.log("Franquisia no cuadra")
+                                }else{
+                                    console.log("paso por aqui")
+                                    PDATOS += new_9f10
+                                }
                             }
                         }
-                    }
 
-                    if (activate_pdatos != true) {
-                        // agregamos los valores de la primera trama 
-                        PLOT_PARAMS += add_space(qty_space_blank, value_tag)
-                        //console.log("agregando:", value_tag)
-                    }
-                }
-                let init_pdatos = 48 + PDATOS.length
-                let end_pdatos = 303 // es hasta el 301 pero se le agregan dos espacios en blancos por que PVKI va en el 304
-                PDATOS += add_space((end_pdatos - init_pdatos) + 1, PDATOS)
-                PLOT_PARAMS += PDATOS
-
-                // AGREGANDO ULTIMA TRAMA 
-                //console.log("Agregando trama final")
-                PLOT_PARAMS += schemas_arqc["PVKI"]["value"]
-
-                // AGREGANDO ESPACIOS DESDE EL 305 AL 953 POR QUE PCVN ES DEL 994 Y 995
-                PLOT_PARAMS += " ".repeat(649)
-                PLOT_PARAMS += PCVN
-
-                // completar hasta el 1024
-                PLOT_PARAMS += " ".repeat(1024 - 956 + 1)
-                console.log("String total:" + (PLOT_PARAMS).length)
-
-                // CONEXION IBM 
-                try {
-                    const conn = new Connection({
-                        transport: 'ssh',
-                        transportOptions: {
-                            host: process.env.HOST_ARQC || 'default',
-                            username: process.env.USER_ARQC || 'default',
-                            password: process.env.PWD_ARQC || 'default'
-                        },
-                    });
-
-                    const program = new ProgramCall(process.env.PROGRAM_ARQC, {
-                        lib: process.env.LIBRARY_ARQC
-                    })
-
-                    const command = new CommandCall({ type: 'cl', command: 'CHGLIBL LIBL(AXSWQACL AZLOSWQACL AZCOSWQA AZBASWQA AZML2931 QGPL QTEMP MIMIX)  ' })
-                    program.addParam({ type: "1024A", value: PLOT_PARAMS, io: "both" })
-
-                    // // llamada del programa
-                    conn.add(command);
-                    conn.add(program);
-                    conn.debug(true);
-
-                    conn.run((error, xmlOutput) => {
-                        if (error) {
-                            res.json({ "status": error })
-                            return error;
+                        if (activate_pdatos != true) {
+                            // agregamos los valores de la primera trama 
+                            PLOT_PARAMS += add_space(qty_space_blank, value_tag)
+                            //console.log("agregando:", value_tag)
                         }
+                    }
 
-                        //const Parser = new XMLParser();
-                        //const result = Parser.parse(xmlOutput);
-                        console.log(xmlOutput);
-                        //var respu = JSON.parse(JSON.stringify(result.myscript.pgm.error[0]));
-                        // var pin = respu[0].data + "";
-                        //console.log(respu)
-                        res.json({ "status": "Ok" })
-                    });
+                    let init_pdatos = 48 //+ PDATOS.length
+                    let end_pdatos = 303 // es hasta el 301 pero se le agregan dos espacios en blancos por que PVKI va en el 304
+                    console.log(PDATOS.length, (end_pdatos - init_pdatos) + 1)
+                    PDATOS = add_space((end_pdatos - init_pdatos) + 1, PDATOS)
+                    PLOT_PARAMS += PDATOS
+                    console.log(PDATOS)
+                    // AGREGANDO ULTIMA TRAMA 
+                    //console.log("Agregando trama final")
+                    PLOT_PARAMS += schemas_arqc["PVKI"]["value"]
 
-                } catch (error) {
-                    res.json({ "Status": "error", error })
+                    // AGREGANDO ESPACIOS DESDE EL 305 AL 953 POR QUE PCVN ES DEL 994 Y 995
+                    PLOT_PARAMS += " ".repeat(649)
+                    PLOT_PARAMS += PCVN
+
+                    // completar hasta el 1024
+                    PLOT_PARAMS += " ".repeat(1024 - 956 + 1)
+                    console.log()
+                    console.log("String total:" + (PLOT_PARAMS).length)
+
+                    // CONEXION IBM 
+                    try {
+                        const conn = new Connection({
+                            transport: 'ssh',
+                            transportOptions: {
+                                host: process.env.HOST_ARQC || 'default',
+                                username: process.env.USER_ARQC || 'default',
+                                password: process.env.PWD_ARQC || 'default'
+                            },
+                        });
+
+                        const program = new ProgramCall(process.env.PROGRAM_ARQC, {
+                            lib: process.env.LIBRARY_ARQC
+                        })
+
+                        const command = new CommandCall({ type: 'cl', command: 'CHGLIBL LIBL(AXSWQACL AZLOSWQACL AZCOSWQA AZBASWQA AZML2931 QGPL QTEMP MIMIX)  ' })
+                        program.addParam({ type: "1024A", value: PLOT_PARAMS, io: "both" })
+
+                        // // llamada del programa
+                        conn.add(command);
+                        conn.add(program);
+                        conn.debug(true);
+
+                        conn.run((error, xmlOutput) => {
+                            if (error) {
+                                res.json({ "Status": error })
+                                return error;
+                            }
+
+                            const Parser = new XMLParser();
+                            const result = Parser.parse(xmlOutput);
+                            console.log(xmlOutput);
+                            console.log(result);
+                            var respu = JSON.parse(JSON.stringify(result.myscript.pgm));
+                            // var pin = respu[0].data + "";
+                            //console.log(respu)
+                            console.log(respu)
+                            res.json({ "status": "Ok", "trama": PLOT_PARAMS, "body" : body , "ARQC": respu })
+                        });
+
+                        //res.json({ "status": "Ok", "trama": PLOT_PARAMS })
+                    } catch (error) {
+                        res.json({ "Status": "error", error })
+                    }
+                }else{
+                    res.json({"Status": "ERROR por paramtro 9F10 - largo de la cadena no valida"})
                 }
-
-
             } else {
                 res.json({ "Status": "Franquicia no encontrada" })
             }

@@ -1,6 +1,6 @@
 const schemaProgram = {
     "APL":{
-        value: "ATM",
+        value: "EMV",
         param_arqc: "APL",
         init: 1,
         end:3 
