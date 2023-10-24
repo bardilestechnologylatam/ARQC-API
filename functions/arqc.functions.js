@@ -10,7 +10,8 @@ const franquicias =  {
     "404028" : "CMR PRO",
     "512269" : "MASTERCARD PREMIUM",
     "522468" : "CMR MASTERCARD ELITE",
-    "548742" : "MASTERCARD CONTACTLESS"
+    "548742" : "MASTERCARD CONTACTLESS",
+    "409767" : "VISA TRADICIONAL"
 }
 
 arqc_functions.get_franquicia = (tag) =>{ //5A
