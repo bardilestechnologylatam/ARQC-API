@@ -156,7 +156,7 @@ arqc_obj.get_arqc = async (req, res) => {
                                 const Parser = new XMLParser();
                                 const result = Parser.parse(xmlOutput);
                                 var respu = JSON.parse(JSON.stringify(result.myscript.pgm));
-                                res.status(200).json({ "Status": "Ok", "ARQC": respu["parm"]["data"] })
+                                res.status(200).json({ "Status": "Ok", "ARQC": respu["parm"]["data"].substring(9,25) })
                             }catch(innerError){
                                 res.status(200).json({ "Status": "Error al obtener el ARQC" })
                             }
