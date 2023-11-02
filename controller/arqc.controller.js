@@ -7,9 +7,7 @@ arqc_obj = {}
 const schemas_arqc = require('../schemas/arqc_program');
 const schemas_payload = require('../schemas/arqc_req');
 const schemas_function = require('../functions/schemas.functions') // validaciones del esquema con el payload
-
 const arqc_functions = require('../functions/arqc.functions') // OBTENER FRANQUICIA 
-
 
 const add_space = (qty_characters, data_param_arqc) => {
     if (qty_characters == data_param_arqc.length) {
@@ -33,7 +31,7 @@ arqc_obj.get_arqc = async (req, res) => {
     // VALIDACION DEL REQUEST/PAYLOAD CON EL ESQUEMA - PRE CONSUMO DEL APLICATIVO
     const errors = schemas_function.validateFields(body, schemas_payload);
     if (errors != null) {
-        res.status(400).json({ errors });
+        res.status(400).json({ "Status" : "Error de parametros", errors });
     } else {
         // SI ESTAN LOS PARAMETROS VALIDADOS, REALIZAMOS EL CONSUMO DEL PROGRAMA
         // VALIDACION DE LA FRANQUICIA - SI ES MASTERCARD SEGUN EL TAG 5A
@@ -150,35 +148,34 @@ arqc_obj.get_arqc = async (req, res) => {
 
                         conn.run((error, xmlOutput) => {
                             if (error) {
-                                res.json({ "Status": error })
+                                res.status(400).json({ "Status": error })
                                 return error;
                             }
 
-                            const Parser = new XMLParser();
-                            const result = Parser.parse(xmlOutput);
-                            console.log(xmlOutput);
-                            console.log(result);
-                            var respu = JSON.parse(JSON.stringify(result.myscript.pgm));
-                            // var pin = respu[0].data + "";
-                            //console.log(respu)
-                            console.log(respu)
-                            res.json({ "status": "Ok", "trama": PLOT_PARAMS, "body" : body , "ARQC": respu })
+                            try{
+                                const Parser = new XMLParser();
+                                const result = Parser.parse(xmlOutput);
+                                var respu = JSON.parse(JSON.stringify(result.myscript.pgm));
+                                res.status(200).json({ "Status": "Ok", "ARQC": respu["parm"]["data"] })
+                            }catch(innerError){
+                                res.status(200).json({ "Status": "Error al obtener el ARQC" })
+                            }
+                            
                         });
 
                         //res.json({ "status": "Ok", "trama": PLOT_PARAMS })
                     } catch (error) {
-                        res.json({ "Status": "error", error })
+                        res.status(400).json({ "Status": "error", error })
                     }
                 }else{
-                    res.json({"Status": "ERROR por paramtro 9F10 - largo de la cadena no valida"})
+                    res.status(400).json({"Status": "ERROR por paramtro 9F10 - largo de la cadena no valida"})
                 }
             } else {
-                res.json({ "Status": "Franquicia no encontrada" })
+                res.status(400).json({ "Status": "Franquicia no encontrada" })
             }
         } else {
-            res.status(200).json({ "Status": "Franquicia no se ha encontrado" })
+            res.status(400).json({ "Status": "Franquicia no se ha encontrado" })
         }
-
     }
 }
 
